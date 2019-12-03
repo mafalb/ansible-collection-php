@@ -1,0 +1,20 @@
+# vim: set ft=yaml ts=2 expandtab:
+---
+
+- debug: var=php_cli_package
+  tags:
+  - never
+  - debug
+
+- name: debug packages
+  debug: msg="{{ (extensions if (scl == false) else extensions|map('regex_replace', '(.*)', scl + '-\\1')|list) + [ php_cli_package ] }}"
+  tags:
+    - never
+    - debug
+
+- name: php-cli is installed
+  package:
+    name: "{{ (extensions if (scl == false) else extensions|map('regex_replace', '(.*)', scl + '-\\1')|list) + [ php_cli_package ] }}"
+    state: installed
+
+...

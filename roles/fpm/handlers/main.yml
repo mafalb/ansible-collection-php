@@ -1,0 +1,10 @@
+# vim: set ft=yaml ts=2 expandtab:
+---
+
+- name: reload php-fpm
+  when: not php_fpm_was_started.changed
+  service:
+    name: "{{ php_fpm_service }}"
+    state: reloaded
+  
+...

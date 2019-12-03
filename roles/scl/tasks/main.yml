@@ -1,0 +1,38 @@
+# vim: set ft=yaml ts=2 expandtab:
+---
+
+- name: debug scl
+  debug: var=scl
+  tags:
+    - never
+    - debug
+
+- name: debug scl prefix
+  debug: var=scl.split('-')[0]
+  tags:
+    - never
+    - debug
+
+- name: assertions
+  assert:
+    that:
+      - scl is defined
+
+- name: enable script is present
+  when:
+  - scl_enabled is defined
+  - scl_enabled|bool
+  file:
+    src: /opt/{{ scl.split('-')[0] }}/{{ scl }}/enable
+    dest: /etc/profile.d/{{ scl }}.sh
+    state: link
+
+- name: enable script is absent
+  when:
+  - scl_enabled is defined
+  - not scl_enabled|bool
+  file:
+    path: /etc/profile.d/{{ scl }}.sh
+    state: absent
+
+...

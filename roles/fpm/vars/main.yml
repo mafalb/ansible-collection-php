@@ -1,0 +1,7 @@
+# vim: set ft=yaml ts=2 expandtab:
+---
+
+php_fpm_package: "{{  ( scl != false )|ternary( scl+'-php-fpm', 'php-fpm') }}" 
+php_fpm_service: "{{  ( scl != false )|ternary( scl+'-php-fpm', 'php-fpm') }}" 
+
+...
