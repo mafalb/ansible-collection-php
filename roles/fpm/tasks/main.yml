@@ -11,7 +11,17 @@
   - never
   - debug
 
+- debug: var=etcdir
+  tags:
+  - never
+  - debug
+
 - debug: msg="{{ extensions + [ php_fpm_package ] }}"
+  tags:
+  - never
+  - debug
+
+- debug: var=etcdir
   tags:
   - never
   - debug
@@ -19,17 +29,39 @@
 - name: debug packages
   debug: msg="{{ (extensions if (scl == false) else extensions|map('regex_replace', '(.*)', scl + '-\\1')|list) + [ php_fpm_package ] }}"
   tags:
-    - never
-    - debug
+  - never
+  - debug
 
 - name: php-fpm is installed
   package:
     name: "{{ (extensions if (scl == false) else extensions|map('regex_replace', '(.*)', scl + '-\\1')|list) + [ php_fpm_package ] }}"
 
+- name: pool configs are present
+  when: php_fpm_pools is defined
+  loop: "{{ php_fpm_pools }}"
+  template:
+    src: pool.conf.j2
+    dest: "{{ etcdir }}/php-fpm.d/{{ item.poolname }}.conf"
+  notify: reload php-fpm
+
+- name: placeholder for pool www is present
+  when:
+  - php_fpm_pools is defined
+  - not 'www' in php_fpm_pools
+  copy:
+    content: '# placeholder'
+    dest: "{{ etcdir }}/php-fpm.d/www.conf"
+  notify: reload php-fpm
+    
 - name: php-fpm service is running
   service:
     name: "{{ php_fpm_service }}"
     state: started
   register: _php_fpm_was_started
+
+- debug: var=_php_fpm_was_started
+  tags:
+  - never
+  - debug
 
 ...
