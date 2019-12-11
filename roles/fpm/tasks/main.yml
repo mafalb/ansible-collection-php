@@ -32,16 +32,42 @@
   - never
   - debug
 
+- name: assertions for pool config
+  loop: "{{ php_fpm_pools }}"
+  assert:
+    that:
+      - item.name is defined
+      - item.user is defined
+      - item.group is defined
+
 - name: php-fpm is installed
   package:
     name: "{{ (extensions if (scl == false) else extensions|map('regex_replace', '(.*)', scl + '-\\1')|list) + [ php_fpm_package ] }}"
 
+
+- name: directory for log files are present
+  when: php_fpm_pools is defined
+  loop: "{{ php_fpm_pools }}"
+  file:
+    path: "{{ vardir }}/log/php-fpm/{{ item.name }}"
+    owner: "{{ item.user }}"
+    group: root
+    mode: 0770
+
+- name: test template
+  template:
+    src: test.j2
+    dest: /tmp/test.txt
+
 - name: pool configs are present
   when: php_fpm_pools is defined
   loop: "{{ php_fpm_pools }}"
+  loop_control:
+    loop_var: pool
   template:
-    src: pool.conf.j2
-    dest: "{{ etcdir }}/php-fpm.d/{{ item.poolname }}.conf"
+    src: test.j2
+    dest: "{{ etcdir }}/php-fpm.d/{{ pool.name }}.conf"
+    backup: true
   notify: reload php-fpm
 
 - name: placeholder for pool www is present
@@ -52,6 +78,7 @@
     content: '# placeholder'
     dest: "{{ etcdir }}/php-fpm.d/www.conf"
   notify: reload php-fpm
+
     
 - name: php-fpm service is running
   service:

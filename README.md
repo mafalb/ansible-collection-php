@@ -31,6 +31,13 @@
 
   - role: mafalb.php.fpm
     scl: rh-php70
+    php_fpm_pools:
+      - name: mypool
+        user: myuser
+        group: mygroup
+        listen: /path/to/unix/socket
+        other_php_fpm_config_directive: gugu
+        ...
 
 ```
 
@@ -44,3 +51,4 @@ extensions:
 - php-pdo
 ```
 
+```php_fpm_pools: [...]``` a list of pools

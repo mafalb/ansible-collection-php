@@ -4,5 +4,6 @@
 scl: false
 extensions: []
 etcdir: "{{ '/etc/opt/' + scl.split('-')[0] + '/' + scl if scl else '/etc' }}"
+vardir: "{{ '/var/opt/' + scl.split('-')[0] + '/' + scl if scl else '/var' }}"
 
 ...
