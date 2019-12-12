@@ -49,15 +49,34 @@
   when: php_fpm_pools is defined
   loop: "{{ php_fpm_pools }}"
   file:
-    path: "{{ vardir }}/log/php-fpm/{{ item.name }}"
+    path: "{{ vardir }}/log/{{ item.name }}"
+    state: directory
     owner: "{{ item.user }}"
     group: root
+    setype: httpd_var_lib_t 
     mode: 0770
 
-- name: test template
-  template:
-    src: test.j2
-    dest: /tmp/test.txt
+- name: directories for data are present
+  when: php_fpm_pools is defined
+  loop: "{{ php_fpm_pools|product(['session','wsdlcache'])|list }}"
+  file:
+    path: "{{ vardir }}/lib/php/{{ item[0].name }}/{{ item[1] }}"
+    state: directory
+    owner: root
+    group: "{{ item[0].group }}"
+    setype: httpd_var_run_t
+    mode: 0770
+
+- name: directories for data are present
+  when: php_fpm_pools is defined
+  loop: "{{ php_fpm_pools }}"
+  file:
+    path: "{{ vardir }}/lib/php/{{ item.name }}/opcache"
+    state: directory
+    owner: root
+    group: "{{ item.group }}"
+    setype: httpd_var_lib_t 
+    mode: 0770
 
 - name: pool configs are present
   when: php_fpm_pools is defined
@@ -65,7 +84,7 @@
   loop_control:
     loop_var: pool
   template:
-    src: test.j2
+    src: pool.conf.j2
     dest: "{{ etcdir }}/php-fpm.d/{{ pool.name }}.conf"
     backup: true
   notify: reload php-fpm
@@ -75,10 +94,9 @@
   - php_fpm_pools is defined
   - not 'www' in php_fpm_pools
   copy:
-    content: '# placeholder'
+    content: '; placeholder'
     dest: "{{ etcdir }}/php-fpm.d/www.conf"
   notify: reload php-fpm
-
     
 - name: php-fpm service is running
   service:
@@ -91,4 +109,9 @@
   - never
   - debug
 
+- name: logrotate for pools is present
+  template:
+    src: logrotate-pool.j2
+    dest: /etc/logrotate.d/{{ scl|default('php-fpm') }}-pools
+    
 ...

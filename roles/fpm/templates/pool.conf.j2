@@ -1,6 +1,6 @@
-; Start a new pool named 'www'.
+; Start a new pool named '{{ pool.name }}'.
 ; the variable $pool can we used in any directive and will be replaced by the
-; pool name ('www' here)
+; pool name ('{{ pool.name }}' here)
 [{{ pool.name }}]
 
 ; Per pool prefix
@@ -17,6 +17,8 @@
 ; Default Value: none
 {% if prefix is defined and prefix %}
 prefix = {{ pool.prefix }}
+{% else %}
+;prefix = /path/to/pools/$pool
 {% endif %}
 
 ; Unix user/group of processes
@@ -51,15 +53,9 @@ listen = {{ vardir }}/run/$pool.sock
 ; permissions must be set in order to allow connections from a web server.
 ; Default Values: user and group are set as the running user
 ;                 mode is set to 0660
-{% if listen.owner is defined %}
-listen.owner = {{ pool.listen.owner }}
-{% endif %}
-{% if listen.group is defined %}
-listen.group = listen.group
-{% endif %}
-{% if listen.mode is defined %}
-listen.mode = listen.mode
-{% endif %}
+listen.owner = {{ pool.listen.owner|default(pool.user) }}
+listen.group = {{ pool.listen.group|default(pool.group) }}
+listen.mode = {{ pool.listen.mode|default('0660') }}
 
 ; When POSIX Access Control Lists are supported you can set them using
 ; these options, value is a comma separated list of user/group names.
@@ -267,7 +263,7 @@ ping.response = {{ pool.ping.response|default('pong') }}
 {% if prefix is defined and prefix %}
 ;access.log = $prefix/log/php-fpm/access.log
 {% else %}
-;access.log = {{ vardir }}/log/php-fpm/$pool/access.log
+;access.log = {{ vardir }}/log/$pool/access.log
 {% endif %}
 
 {% raw %}
@@ -335,9 +331,9 @@ ping.response = {{ pool.ping.response|default('pong') }}
 ; Default Value: not set
 ; Note: slowlog is mandatory if request_slowlog_timeout is set
 {% if prefix is defined and prefix %}
-slowlog = prefix/log/php-fpm/$pool/slow.log
+slowlog = prefix/log/$pool/slow.log
 {% else %}
-slowlog = {{ vardir }}/log/php-fpm/$pool/slow.log
+slowlog = {{ vardir }}/log/$pool/slow.log
 {% endif %}
 
 ; The timeout for serving a single request after which a PHP backtrace will be
@@ -435,7 +431,7 @@ catch_workers_output = {{ pool.catch_workers_output|default('no') }}
 {% if prefix is defined and prefix %}
 php_admin_value[error_log] = $prefix/log/php-fpm/error.log
 {% else %}
-php_admin_value[error_log] = {{ pool.php_admin_value.error_log|default(vardir + '/log/php-fpm/$pool/error.log') }}
+php_admin_value[error_log] = {{ pool.php_admin_value.error_log|default(vardir + '/log/$pool/error.log') }}
 {% endif %}
 php_admin_flag[log_errors] = on
 ;php_admin_value[memory_limit] = 128M
@@ -444,11 +440,15 @@ php_admin_flag[log_errors] = on
 php_value[session.save_handler] = files
 {% if prefix is defined and prefix %}
 php_value[session.save_path]    = {{ prefix + '/lib/php/session' }}
+{% if not 'php-soap' in extensions %};{% endif %}
 php_value[soap.wsdl_cache_dir]  = {{ prefix + '/lib/php/wsdlcache' }}
-;php_value[opcache.file_cache]  = {{ prefix + '/lib/php/opcache' }}
+{% if not 'php-opcache' in extensions %};{% endif %}
+php_value[opcache.file_cache]  = {{ prefix + '/lib/php/opcache' }}
 {% else %}
-php_value[session.save_path]    = {{ pool.php_value.session.save_path|default(vardir + '/lib/php/session') }}
-php_value[soap.wsdl_cache_dir]  = {{ pool.php_value.soap.wsdl_cache_dir|default(vardir + '/lib/php/wsdlcache') }}
-;php_value[opcache.file_cache]  = {{ pool.php_value.opcache.file_cache|default(vardir + '/lib/php/opcache') }}
+php_value[session.save_path]    = {{ pool.php_value.session.save_path|default(vardir + '/lib/php/$pool/session') }}
+{% if not 'php-soap' in extensions %};{% endif %}
+php_value[soap.wsdl_cache_dir]  = {{ pool.php_value.soap.wsdl_cache_dir|default(vardir + '/lib/php/$pool/wsdlcache') }}
+{% if not 'php-opcache' in extensions %};{% endif %}
+php_value[opcache.file_cache]  = {{ pool.php_value.opcache.file_cache|default(vardir + '/lib/php/$pool/opcache') }}
 {% endif %}
 

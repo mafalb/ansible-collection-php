@@ -1,0 +1,18 @@
+{% for pool in php_fpm_pools %}
+{% if pool.prefix is defined and pool.prefix %}
+{{ pool.prefix }}/log/{{ pool.name }}/*.log
+{% else %}
+{{ vardir }}/log/{{ pool.name }}/*.log
+{% endif %}
+{% endfor %}
+{
+    missingok
+    notifempty
+    sharedscripts
+    delaycompress
+    sharedscripts
+    postrotate
+	/bin/kill -SIGUSR1 `cat {{ vardir }}/run/php-fpm/php-fpm.pid 2>/dev/null` 2>/dev/null || true
+    endscript
+}
+
